@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="ru">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://code.jquery.com/jquery-3.6.0.js"
+        integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/paginationjs/2.1.5/pagination.css"
+        integrity="sha512-QmxybGIvkSI8+CGxkt5JAcGOKIzHDqBMs/hdemwisj4EeGLMXxCm9h8YgoCwIvndnuN1NdZxT4pdsesLXSaKaA=="
+        crossorigin="anonymous" />
+
+    <style>
+        .forma {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            margin-top: 50px;
+
+        }
+    </style>
+
+    <title>Список заявок</title>
+</head>
+
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarTogglerDemo03"
+                aria-controls="navbarTogglerDemo03" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarTogglerDemo03">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="auth.html">Авторизация</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="index.php">Регистрация</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="applications.html">Список заявок</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link active" href="users.html">Список пользователей</a>
+                    </li>
+
+
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <br>
+    <h1>
+        Список заявок
+    </h1>
+
+    <div class="forma">
+
+        <table class="table">
+
+            <thead>
+                <tr>
+                    <th scope="col">id</th>
+                    <th scope="col">name</th>
+                    <th scope="col">number</th>
+                    <th scope="col">email</th>
+                    <th scope="col">message</th>
+                </tr>
+            </thead>
+
+            <tbody id="table-body">
+
+            </tbody>
+
+        </table>
+        <div class="container ">
+            <div id="pagination-wrapper"></div>
+        </div>
+        </form>
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.1/dist/umd/popper.min.js"
+        integrity="sha384-SR1sx49pcuLnqZUnnPwx6FCym0wLsk5JZuNx2bPPENzswTNFaQU1RDvt3wT4gWFG"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.min.js"
+        integrity="sha384-j0CNLUeiqtyaRmlzUHCPZ+Gy5fQu0dQ6eZ/xAww941Ai1SxSY+0EQqNXNE6DZiVc"
+        crossorigin="anonymous"></script>
+
+    <script>
+        let app_data = false;
+
+        $(function () {
+            $.ajax({
+                url: 'http://site.devel/appdata.php',
+                method: 'POST',
+                data: { id: 'id' },
+                dataType: 'JSON',
+                success: function (data) {
+                    app_data = data;
+                }
+            })
+        });
+
+        setTimeout(() => {
+            var state = {
+                'querySet': app_data,
+                'page': 1,
+                'rows': 10,
+                'window': 100000,
+            }
+            console.log(app_data)
+
+            buildTable()
+
+            function pagination(querySet, page, rows) {
+
+                var trimStart = (page - 1) * rows
+                var trimEnd = trimStart + rows
+
+                var trimmedData = querySet.slice(trimStart, trimEnd)
+
+                var pages = Math.ceil(querySet.length / rows);
+
+                return {
+                    'querySet': trimmedData,
+                    'pages': pages,
+                }
+            }
+
+            function pageButtons(pages) {
+                var wrapper = document.getElementById('pagination-wrapper')
+
+                wrapper.innerHTML = ``
+                console.log('Pages:', pages)
+
+                var maxLeft = (state.page - Math.ceil(state.window / 2))
+                var maxRight = (state.page + Math.ceil(state.window / 2))
+
+                if (maxLeft < 1) {
+                    maxLeft = 1
+                    maxRight = state.window
+                }
+
+                if (maxRight > pages) {
+                    maxLeft = pages - (state.window - 1)
+
+                    if (maxLeft < 1) {
+                        maxLeft = 1
+                    }
+                    maxRight = pages
+                }
+
+
+
+                for (var page = maxLeft; page <= maxRight; page++) {
+                    wrapper.innerHTML += `<button value=${page} class="page btn btn-sm btn-info">${page}</button>`
+                }
+
+
+                $('.page').on('click', function () {
+                    $('#table-body').empty()
+
+                    state.page = Number($(this).val())
+
+                    buildTable()
+                })
+
+            }
+
+
+            function buildTable() {
+                var table = $('#table-body')
+
+                var data = pagination(state.querySet, state.page, state.rows)
+                var myList = data.querySet
+
+                for (var i = 1 in myList) {
+                    //Keep in mind we are using "Template Litterals to create rows"
+                    var row = `<tr>
+                        <th scope="row" >${myList[i].id}</th>
+                        <td>${myList[i].name}</td>
+                        <td>${myList[i].number}</td>
+                        <td>${myList[i].email}</td>
+                        <td>${myList[i].message}</td>
+                        `
+                    table.append(row)
+                }
+
+                pageButtons(data.pages)
+            }
+
+        }, 200)
+    </script>
+
+
+</body>
+
+</html>
